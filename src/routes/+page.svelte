@@ -203,7 +203,7 @@
 					<Tooltip.Root>
 						<Tooltip.Trigger>
 							{#snippet child({ props })}
-								<Button onclick={screenshot} size="icon" variant="outline" class="group" {...props}>
+								<Button {...props} onclick={screenshot} size="icon" variant="outline" class="group">
 									<CameraIcon />
 								</Button>
 							{/snippet}
@@ -227,7 +227,7 @@
 					<Tooltip.Root>
 						<Tooltip.Trigger>
 							{#snippet child({ props })}
-								<Button onclick={download} size="icon" variant="outline" class="group" {...props}>
+								<Button {...props} onclick={download} size="icon" variant="outline" class="group">
 									<Icons.Upload />
 								</Button>
 							{/snippet}
@@ -237,7 +237,7 @@
 					<Tooltip.Root>
 						<Tooltip.Trigger>
 							{#snippet child({ props })}
-								<Button onclick={reset} size="icon" variant="outline" class="group" {...props}>
+								<Button {...props} onclick={reset} size="icon" variant="outline" class="group">
 									<Icons.RefreshCcw />
 								</Button>
 							{/snippet}
@@ -276,7 +276,10 @@
 						{#each chartConfig.current.series as series, i (i)}
 							{#each series.data as data, j (j)}
 								<div
-									class="absolute bottom-0 ml-2 w-52 rounded-sm border border-black transition-all"
+									class={cn(
+										'absolute bottom-0 ml-2 w-52 rounded-sm border border-black',
+										draggingSeriesIndex === null && 'transition-all'
+									)}
 									style="background-color: {i === 0
 										? chartConfig.current.categories[j].color
 										: chartConfig.current
