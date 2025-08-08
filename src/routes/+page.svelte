@@ -21,7 +21,7 @@
 		}[];
 	};
 
-	const chartConfig = new PersistedState<ChartConfig>('chart-config', {
+	const DEFAULT_CHART_CONFIG: ChartConfig = {
 		title: 'Developer Productivity',
 		subtitle: 'Productivity across different teams',
 		yAxisLabel: '# Tickets Completed / Week',
@@ -69,11 +69,39 @@
 				]
 			}
 		]
-	});
+	};
+
+	const chartConfig = new PersistedState<ChartConfig>('chart-config', DEFAULT_CHART_CONFIG);
+
+	function reset() {
+		chartConfig.current = DEFAULT_CHART_CONFIG;
+	}
+
+	let dragStartY = $state(0);
+	let originalDragHeight = $state(0);
+	let draggingSeriesIndex = $state<[number, number] | null>(null);
 </script>
+
+<svelte:window
+	onpointermove={(e) => {
+		if (draggingSeriesIndex !== null) {
+			const difference = e.clientY - dragStartY;
+
+			const newHeightPx = originalDragHeight - difference;
+
+			const newHeightPercentage = Math.min(100, Math.max(0, (newHeightPx / 500) * 100));
+
+			chartConfig.current.series[draggingSeriesIndex[0]].data[
+				draggingSeriesIndex[1]
+			].bullshitHeight = newHeightPercentage;
+		}
+	}}
+	onpointerup={() => (draggingSeriesIndex = null)}
+/>
 
 <main class="flex h-svh items-center justify-center">
 	<div class="flex flex-col gap-8">
+		<button type="button" onclick={reset}>Reset</button>
 		<div class="flex flex-col gap-2">
 			<div>
 				<ContentEditable
@@ -103,12 +131,21 @@
 				{#each chartConfig.current.series as series, i (i)}
 					{#each series.data as data, j (j)}
 						<div
-							class="absolute bottom-0 ml-2 h-50 w-52 rounded-sm border border-black"
+							class="absolute bottom-0 ml-2 w-52 rounded-sm border border-black"
 							style="background-color: {i === 0
 								? chartConfig.current.categories[j].color
 								: chartConfig.current
 										.nonPromotedSeriesColor}; translate: calc(({i} * 100%) + ({i} * 8px)); height: {data.bullshitHeight}%;"
 						>
+							<!-- drag handle -->
+							<div
+								class="absolute -top-1.5 left-0 h-4 w-[208px] cursor-row-resize select-none"
+								onpointerdown={(e) => {
+									originalDragHeight = (data.bullshitHeight / 100) * 500;
+									dragStartY = e.pageY;
+									draggingSeriesIndex = [i, j];
+								}}
+							></div>
 							<div class={cn('absolute -top-7 w-full text-center', j > 0 && 'top-1')}>
 								<ContentEditable this="div" bind:content={data.allegedData} />
 							</div>
