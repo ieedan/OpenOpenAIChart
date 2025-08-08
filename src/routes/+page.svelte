@@ -6,6 +6,8 @@
 	import * as Icons from '$lib/components/icons/moving';
 	import * as z from 'zod/v4';
 	import { toast } from 'svelte-sonner';
+	import { domToPng } from 'modern-screenshot';
+	import CameraIcon from '@lucide/svelte/icons/camera';
 
 	const ChartConfigSchema = z.object({
 		title: z.string(),
@@ -128,9 +130,21 @@
 		}
 	}
 
+	async function screenshot() {
+		const url = await domToPng(chartRef as Node);
+
+		const a = document.createElement('a');
+		a.download = 'bullshit-chart.png';
+		a.href = url;
+		a.click();
+		a.remove();
+	}
+
 	let dragStartY = $state(0);
 	let originalDragHeight = $state(0);
 	let draggingSeriesIndex = $state<[number, number] | null>(null);
+
+	let chartRef = $state<HTMLDivElement | null>(null);
 </script>
 
 <svelte:window
@@ -151,7 +165,7 @@
 />
 
 <main class="flex h-svh items-center justify-center">
-	<div class="flex flex-col gap-8">
+	<div class="flex flex-col">
 		<div class="flex items-center justify-end gap-2">
 			<div>
 				<label for="chart-config" class={buttonVariants({ variant: 'outline', size: 'icon' })}>
@@ -159,6 +173,9 @@
 				</label>
 				<input type="file" accept=".json" id="chart-config" hidden onchange={importChart} />
 			</div>
+			<Button onclick={screenshot} size="icon" variant="outline" class="group">
+				<CameraIcon />
+			</Button>
 			<Button onclick={download} size="icon" variant="outline" class="group">
 				<Icons.Upload />
 			</Button>
@@ -166,76 +183,78 @@
 				<Icons.RefreshCcw />
 			</Button>
 		</div>
-		<div class="flex flex-col gap-2">
-			<div>
-				<ContentEditable
-					this="h1"
-					bind:content={chartConfig.current.title}
-					class="text-2xl font-medium"
-				/>
-				<ContentEditable this="p" bind:content={chartConfig.current.subtitle} class="text-sm" />
-			</div>
-			<!-- legend -->
-			<div class="flex place-items-center gap-4">
-				{#each chartConfig.current.categories as category, i (i)}
-					<div class="flex items-center gap-2">
-						<div
-							class="size-3 rounded-full border border-zinc-600"
-							style="background-color: {category.color}"
-						></div>
-						<ContentEditable this="span" bind:content={category.label} class="text-sm" />
-					</div>
-				{/each}
-			</div>
-		</div>
-
-		<!-- "Chart" -->
-		<div class="px-7">
-			<div class="relative h-[500px] w-[calc(216px*3+36px)]">
-				{#each chartConfig.current.series as series, i (i)}
-					{#each series.data as data, j (j)}
-						<div
-							class="absolute bottom-0 ml-2 w-52 rounded-sm border border-black transition-all"
-							style="background-color: {i === 0
-								? chartConfig.current.categories[j].color
-								: chartConfig.current
-										.nonPromotedSeriesColor}; translate: calc(({i} * 100%) + ({i} * 8px)); height: {data.bullshitHeight}%;"
-						>
-							<!-- drag handle -->
+		<div bind:this={chartRef} class="flex flex-col gap-8 p-8 bg-background">
+			<div class="flex flex-col gap-2">
+				<div>
+					<ContentEditable
+						this="h1"
+						bind:content={chartConfig.current.title}
+						class="text-2xl font-medium"
+					/>
+					<ContentEditable this="p" bind:content={chartConfig.current.subtitle} class="text-sm" />
+				</div>
+				<!-- legend -->
+				<div class="flex place-items-center gap-4">
+					{#each chartConfig.current.categories as category, i (i)}
+						<div class="flex items-center gap-2">
 							<div
-								class="absolute -top-1.5 left-0 h-4 w-[208px] cursor-row-resize select-none"
-								onpointerdown={(e) => {
-									originalDragHeight = (data.bullshitHeight / 100) * 500;
-									dragStartY = e.pageY;
-									draggingSeriesIndex = [i, j];
-								}}
+								class="size-3 rounded-full border border-zinc-600"
+								style="background-color: {category.color}"
 							></div>
-							<div class={cn('absolute -top-7 w-full text-center', j > 0 && 'top-1')}>
-								<ContentEditable this="div" bind:content={data.allegedData} />
-							</div>
-							{#if j === 0}
-								<ContentEditable
-									this="div"
-									class="relative top-[calc(100%+8px)] w-full text-center"
-									bind:content={series.label}
-								/>
-							{/if}
+							<ContentEditable this="span" bind:content={category.label} class="text-sm" />
 						</div>
 					{/each}
-				{/each}
+				</div>
+			</div>
 
-				<!-- Y Axis Label -->
-				<div
-					class="relative top-1/2 left-[calc(-50%-24px)] flex -translate-y-1/2 -rotate-90 place-items-center justify-center"
-				>
+			<!-- "Chart" -->
+			<div class="px-7">
+				<div class="relative h-[500px] w-[calc(216px*3+36px)]">
+					{#each chartConfig.current.series as series, i (i)}
+						{#each series.data as data, j (j)}
+							<div
+								class="absolute bottom-0 ml-2 w-52 rounded-sm border border-black transition-all"
+								style="background-color: {i === 0
+									? chartConfig.current.categories[j].color
+									: chartConfig.current
+											.nonPromotedSeriesColor}; translate: calc(({i} * 100%) + ({i} * 8px)); height: {data.bullshitHeight}%;"
+							>
+								<!-- drag handle -->
+								<div
+									class="absolute -top-1.5 left-0 h-4 w-[208px] cursor-row-resize select-none"
+									onpointerdown={(e) => {
+										originalDragHeight = (data.bullshitHeight / 100) * 500;
+										dragStartY = e.pageY;
+										draggingSeriesIndex = [i, j];
+									}}
+								></div>
+								<div class={cn('absolute -top-7 w-full text-center', j > 0 && 'top-1')}>
+									<ContentEditable this="div" bind:content={data.allegedData} />
+								</div>
+								{#if j === 0}
+									<ContentEditable
+										this="div"
+										class="relative top-[calc(100%+8px)] w-full text-center"
+										bind:content={series.label}
+									/>
+								{/if}
+							</div>
+						{/each}
+					{/each}
+
+					<!-- Y Axis Label -->
 					<div
-						class="min-w-none w-fit max-w-none p-2 text-center outline-none"
-						contenteditable="true"
-						onblur={(e) => {
-							chartConfig.current.yAxisLabel = e.currentTarget.innerText;
-						}}
+						class="relative top-1/2 left-[calc(-50%-24px)] flex -translate-y-1/2 -rotate-90 place-items-center justify-center"
 					>
-						{chartConfig.current.yAxisLabel}
+						<div
+							class="min-w-none w-fit max-w-none p-2 text-center outline-none"
+							contenteditable="true"
+							onblur={(e) => {
+								chartConfig.current.yAxisLabel = e.currentTarget.innerText;
+							}}
+						>
+							{chartConfig.current.yAxisLabel}
+						</div>
 					</div>
 				</div>
 			</div>
