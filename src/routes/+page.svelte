@@ -8,6 +8,7 @@
 	import { toast } from 'svelte-sonner';
 	import { domToPng } from 'modern-screenshot';
 	import CameraIcon from '@lucide/svelte/icons/camera';
+	import * as Tooltip from '$lib/components/ui/tooltip';
 
 	const ChartConfigSchema = z.object({
 		title: z.string(),
@@ -167,23 +168,54 @@
 <main class="flex h-svh items-center justify-center">
 	<div class="flex flex-col">
 		<div class="flex items-center justify-end gap-2">
-			<div>
-				<label for="chart-config" class={buttonVariants({ variant: 'outline', size: 'icon' })}>
-					<Icons.Download />
-				</label>
-				<input type="file" accept=".json" id="chart-config" hidden onchange={importChart} />
-			</div>
-			<Button onclick={screenshot} size="icon" variant="outline" class="group">
-				<CameraIcon />
-			</Button>
-			<Button onclick={download} size="icon" variant="outline" class="group">
-				<Icons.Upload />
-			</Button>
-			<Button onclick={reset} size="icon" variant="outline" class="group">
-				<Icons.RefreshCcw />
-			</Button>
+			<Tooltip.Provider delayDuration={150}>
+				<Tooltip.Root>
+					<Tooltip.Trigger>
+						{#snippet child({ props })}
+							<Button onclick={screenshot} size="icon" variant="outline" class="group" {...props}>
+								<CameraIcon />
+							</Button>
+						{/snippet}
+					</Tooltip.Trigger>
+					<Tooltip.Content>Download as PNG</Tooltip.Content>
+				</Tooltip.Root>
+				<Tooltip.Root>
+					<Tooltip.Trigger>
+						<div>
+							<label
+								for="chart-config"
+								class={buttonVariants({ variant: 'outline', size: 'icon' })}
+							>
+								<Icons.Download />
+							</label>
+							<input type="file" accept=".json" id="chart-config" hidden onchange={importChart} />
+						</div>
+					</Tooltip.Trigger>
+					<Tooltip.Content>Import from JSON file</Tooltip.Content>
+				</Tooltip.Root>
+				<Tooltip.Root>
+					<Tooltip.Trigger>
+						{#snippet child({ props })}
+							<Button onclick={download} size="icon" variant="outline" class="group" {...props}>
+								<Icons.Upload />
+							</Button>
+						{/snippet}
+					</Tooltip.Trigger>
+					<Tooltip.Content>Download as JSON</Tooltip.Content>
+				</Tooltip.Root>
+				<Tooltip.Root>
+					<Tooltip.Trigger>
+						{#snippet child({ props })}
+							<Button onclick={reset} size="icon" variant="outline" class="group" {...props}>
+								<Icons.RefreshCcw />
+							</Button>
+						{/snippet}
+					</Tooltip.Trigger>
+					<Tooltip.Content>Reset to default</Tooltip.Content>
+				</Tooltip.Root>
+			</Tooltip.Provider>
 		</div>
-		<div bind:this={chartRef} class="flex flex-col gap-8 p-8 bg-background">
+		<div bind:this={chartRef} class="flex flex-col gap-8 bg-background p-8">
 			<div class="flex flex-col gap-2">
 				<div>
 					<ContentEditable
