@@ -50,5 +50,8 @@
 		"onlyBuiltDependencies": [
 			"esbuild"
 		]
+	},
+	"dependencies": {
+		"svelte-meta-tags": "^4.4.0"
 	}
 }

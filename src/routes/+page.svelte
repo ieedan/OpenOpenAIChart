@@ -10,6 +10,7 @@
 	import CameraIcon from '@lucide/svelte/icons/camera';
 	import * as Tooltip from '$lib/components/ui/tooltip';
 	import Footer from '$lib/components/site/footer.svelte';
+	import { MetaTags } from 'svelte-meta-tags';
 
 	const ChartConfigSchema = z.object({
 		title: z.string(),
@@ -99,7 +100,7 @@
 		const url = URL.createObjectURL(blob);
 		const a = document.createElement('a');
 		a.href = url;
-		a.download = 'bullshit-chart.json';
+		a.download = 'misleading-chart.json';
 		a.click();
 		a.remove();
 	}
@@ -136,7 +137,7 @@
 		const url = await domToPng(chartRef as Node);
 
 		const a = document.createElement('a');
-		a.download = 'bullshit-chart.png';
+		a.download = 'misleading-chart.png';
 		a.href = url;
 		a.click();
 		a.remove();
@@ -148,6 +149,34 @@
 
 	let chartRef = $state<HTMLDivElement | null>(null);
 </script>
+
+<MetaTags
+	title="OpenOpenAIChart"
+	description="Create misleading charts for your shareholders instantly!"
+	keywords={['openai', 'chart', 'misleading', 'shareholders']}
+	twitter={{
+		cardType: 'summary_large_image',
+		title: 'OpenOpenAIChart',
+		description: 'Create misleading charts for your shareholders instantly!',
+		image: 'https://openopenaichart.com/og.png',
+		creator: '@ieedan'
+	}}
+	openGraph={{
+		url: 'https://openopenaichart.com',
+		type: 'website',
+		title: 'OpenOpenAIChart',
+		description: 'Create misleading charts for your shareholders instantly!',
+		siteName: 'OpenOpenAIChart',
+		images: [
+			{
+				url: 'https://openopenaichart.com/og.png',
+				width: 1115,
+				height: 983,
+				alt: 'OpenOpenAIChart'
+			}
+		]
+	}}
+/>
 
 <svelte:window
 	onpointermove={(e) => {
