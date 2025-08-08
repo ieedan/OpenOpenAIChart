@@ -1,25 +1,37 @@
 <script lang="ts">
+	import { Button, buttonVariants } from '$lib/components/ui/button';
 	import { ContentEditable } from '$lib/components/ui/content-editable';
 	import { cn } from '$lib/utils';
 	import { PersistedState } from 'runed';
+	import * as Icons from '$lib/components/icons/moving';
+	import * as z from 'zod/v4';
+	import { toast } from 'svelte-sonner';
 
-	type ChartConfig = {
-		title: string;
-		subtitle: string;
-		yAxisLabel: string;
-		nonPromotedSeriesColor: string;
-		categories: {
-			label: string;
-			color: string;
-		}[];
-		series: {
-			label: string;
-			data: {
-				allegedData: string;
-				bullshitHeight: number;
-			}[];
-		}[];
-	};
+	const ChartConfigSchema = z.object({
+		title: z.string(),
+		subtitle: z.string(),
+		yAxisLabel: z.string(),
+		nonPromotedSeriesColor: z.string(),
+		categories: z.array(
+			z.object({
+				label: z.string(),
+				color: z.string()
+			})
+		),
+		series: z.array(
+			z.object({
+				label: z.string(),
+				data: z.array(
+					z.object({
+						allegedData: z.string(),
+						bullshitHeight: z.number()
+					})
+				)
+			})
+		)
+	});
+
+	type ChartConfig = z.infer<typeof ChartConfigSchema>;
 
 	const DEFAULT_CHART_CONFIG: ChartConfig = {
 		title: 'Developer Productivity',
@@ -77,6 +89,45 @@
 		chartConfig.current = DEFAULT_CHART_CONFIG;
 	}
 
+	function download() {
+		const json = JSON.stringify(chartConfig.current);
+		const blob = new Blob([json], { type: 'application/json' });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement('a');
+		a.href = url;
+		a.download = 'bullshit-chart.json';
+		a.click();
+		a.remove();
+	}
+
+	async function importChart(
+		e: Event & {
+			currentTarget: EventTarget & HTMLInputElement;
+		}
+	) {
+		const file = e.currentTarget.files?.[0];
+
+		if (!file) return;
+
+		const contents = await file.text();
+
+		try {
+			const json = JSON.parse(contents);
+			const validated = ChartConfigSchema.safeParse(json);
+
+			if (!validated.success) {
+				toast.error('Invalid chart config');
+				return;
+			}
+
+			chartConfig.current = validated.data;
+		} catch (e) {
+			toast.error('Error parsing chart config', {
+				description: e instanceof Error ? e.message : 'Unknown error'
+			});
+		}
+	}
+
 	let dragStartY = $state(0);
 	let originalDragHeight = $state(0);
 	let draggingSeriesIndex = $state<[number, number] | null>(null);
@@ -101,7 +152,20 @@
 
 <main class="flex h-svh items-center justify-center">
 	<div class="flex flex-col gap-8">
-		<button type="button" onclick={reset}>Reset</button>
+		<div class="flex items-center justify-end gap-2">
+			<div>
+				<label for="chart-config" class={buttonVariants({ variant: 'outline', size: 'icon' })}>
+					<Icons.Download />
+				</label>
+				<input type="file" accept=".json" id="chart-config" hidden onchange={importChart} />
+			</div>
+			<Button onclick={download} size="icon" variant="outline" class="group">
+				<Icons.Upload />
+			</Button>
+			<Button onclick={reset} size="icon" variant="outline" class="group">
+				<Icons.RefreshCcw />
+			</Button>
+		</div>
 		<div class="flex flex-col gap-2">
 			<div>
 				<ContentEditable
@@ -119,7 +183,7 @@
 							class="size-3 rounded-full border border-zinc-600"
 							style="background-color: {category.color}"
 						></div>
-						<span class="text-sm">{category.label}</span>
+						<ContentEditable this="span" bind:content={category.label} class="text-sm" />
 					</div>
 				{/each}
 			</div>
@@ -131,7 +195,7 @@
 				{#each chartConfig.current.series as series, i (i)}
 					{#each series.data as data, j (j)}
 						<div
-							class="absolute bottom-0 ml-2 w-52 rounded-sm border border-black"
+							class="absolute bottom-0 ml-2 w-52 rounded-sm border border-black transition-all"
 							style="background-color: {i === 0
 								? chartConfig.current.categories[j].color
 								: chartConfig.current
