@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { ContentEditable } from '$lib/components/ui/content-editable';
 	import { cn } from '$lib/utils';
+	import { PersistedState } from 'runed';
 
 	type ChartConfig = {
 		title: string;
@@ -14,13 +15,13 @@
 		series: {
 			label: string;
 			data: {
-				allegedData: number;
+				allegedData: string;
 				bullshitHeight: number;
 			}[];
 		}[];
 	};
 
-	let chartConfig: ChartConfig = $state({
+	const chartConfig = new PersistedState<ChartConfig>('chart-config', {
 		title: 'Developer Productivity',
 		subtitle: 'Productivity across different teams',
 		yAxisLabel: '# Tickets Completed / Week',
@@ -40,11 +41,11 @@
 				label: 'Me',
 				data: [
 					{
-						allegedData: 0,
+						allegedData: '0',
 						bullshitHeight: 90
 					},
 					{
-						allegedData: 0,
+						allegedData: '0',
 						bullshitHeight: 70
 					}
 				]
@@ -53,7 +54,7 @@
 				label: 'External Contractors',
 				data: [
 					{
-						allegedData: 50,
+						allegedData: '50',
 						bullshitHeight: 30
 					}
 				]
@@ -62,7 +63,7 @@
 				label: 'Dev Team',
 				data: [
 					{
-						allegedData: 20,
+						allegedData: '20',
 						bullshitHeight: 30
 					}
 				]
@@ -75,12 +76,16 @@
 	<div class="flex flex-col gap-8">
 		<div class="flex flex-col gap-2">
 			<div>
-				<ContentEditable this="h1" bind:content={chartConfig.title} class="text-2xl font-medium" />
-				<ContentEditable this="p" bind:content={chartConfig.subtitle} class="text-sm" />
+				<ContentEditable
+					this="h1"
+					bind:content={chartConfig.current.title}
+					class="text-2xl font-medium"
+				/>
+				<ContentEditable this="p" bind:content={chartConfig.current.subtitle} class="text-sm" />
 			</div>
 			<!-- legend -->
 			<div class="flex place-items-center gap-4">
-				{#each chartConfig.categories as category, i (i)}
+				{#each chartConfig.current.categories as category, i (i)}
 					<div class="flex items-center gap-2">
 						<div
 							class="size-3 rounded-full border border-zinc-600"
@@ -94,17 +99,18 @@
 
 		<!-- "Chart" -->
 		<div class="px-7">
-			<div class="relative h-[500px] w-[500px]">
-				{#each chartConfig.series as series, i (i)}
+			<div class="relative h-[500px] w-[calc(216px*3+36px)]">
+				{#each chartConfig.current.series as series, i (i)}
 					{#each series.data as data, j (j)}
 						<div
 							class="absolute bottom-0 ml-2 h-50 w-52 rounded-sm border border-black"
 							style="background-color: {i === 0
-								? chartConfig.categories[j].color
-								: chartConfig.nonPromotedSeriesColor}; translate: calc(({i} * 100%) + ({i} * 8px)); height: {data.bullshitHeight}%;"
+								? chartConfig.current.categories[j].color
+								: chartConfig.current
+										.nonPromotedSeriesColor}; translate: calc(({i} * 100%) + ({i} * 8px)); height: {data.bullshitHeight}%;"
 						>
 							<div class={cn('absolute -top-7 w-full text-center', j > 0 && 'top-1')}>
-								{data.allegedData}
+								<ContentEditable this="div" bind:content={data.allegedData} />
 							</div>
 							{#if j === 0}
 								<ContentEditable
@@ -125,10 +131,10 @@
 						class="min-w-none w-fit max-w-none p-2 text-center outline-none"
 						contenteditable="true"
 						onblur={(e) => {
-							chartConfig.yAxisLabel = e.currentTarget.innerText;
+							chartConfig.current.yAxisLabel = e.currentTarget.innerText;
 						}}
 					>
-						{chartConfig.yAxisLabel}
+						{chartConfig.current.yAxisLabel}
 					</div>
 				</div>
 			</div>
